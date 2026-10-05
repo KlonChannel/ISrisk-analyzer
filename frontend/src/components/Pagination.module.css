@@ -1,0 +1,156 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 4px;
+}
+
+.info {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.info strong {
+  color: #1d1d1f;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #1d1d1f;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: #f0f6ff;
+  border-color: #2B7AEC;
+  color: #2B7AEC;
+}
+
+.navBtn:disabled {
+  color: #c4c4c8;
+  background: #fafafa;
+  border-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.pageList {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pageBtn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #1d1d1f;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pageBtn:hover:not(:disabled):not(.active) {
+  background: #f0f6ff;
+  border-color: #2B7AEC;
+  color: #2B7AEC;
+}
+
+.active {
+  background: #2B7AEC;
+  border-color: #2B7AEC;
+  color: #fff;
+  cursor: default;
+  font-weight: 600;
+}
+
+.ellipsis {
+  min-width: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  user-select: none;
+}
+
+.goto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.gotoInput {
+  width: 56px;
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -moz-appearance: textfield;
+}
+
+.gotoInput::-webkit-outer-spin-button,
+.gotoInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.gotoInput:focus {
+  border-color: #2B7AEC;
+  box-shadow: 0 0 0 3px rgba(43, 122, 236, 0.12);
+}
+
+.gotoBtn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #2B7AEC;
+  background: #2B7AEC;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gotoBtn:hover:not(:disabled) {
+  background: #1e69d6;
+}
+
+.gotoBtn:disabled {
+  background: #a8c7f5;
+  border-color: #a8c7f5;
+  cursor: not-allowed;
+}
