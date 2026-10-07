@@ -211,10 +211,6 @@
   line-height: 1.5;
 }
 
-.plotCardWide {
-  grid-column: 1 / -1;
-}
-
 .plotLoading {
   display: flex;
   align-items: center;

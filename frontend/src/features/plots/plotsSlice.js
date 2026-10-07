@@ -56,7 +56,6 @@ const PLOT_KINDS = [
   "10",
   "11",
   "12",
-  "tree",
 ];
 
 const makeInitialState = () => ({

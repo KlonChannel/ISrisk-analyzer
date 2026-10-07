@@ -48,7 +48,7 @@ ISrisk-analyzer/
     └── src/
         ├── api/              - клиент HTTP и функции скачивания
         ├── app/              - Redux-store
-        ├── components/       - Layout, Pagination
+        ├── components/       - Layout, Pagination, Stepper
         ├── features/         - Redux-слайсы (session, data,
         │                       analysis, results, plots)
         └── pages/            - DataPage, AnalysisPage,

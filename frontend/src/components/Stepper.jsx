@@ -1,29 +1,34 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 const STEPS = [
-  { key: "data", label: "Данные" },
-  { key: "analysis", label: "Анализ" },
-  { key: "results", label: "Результаты" },
-  { key: "plots", label: "Визуализация" },
+  { key: "data", label: "Данные", path: "/data" },
+  { key: "analysis", label: "Анализ", path: "/analysis" },
+  { key: "results", label: "Результаты", path: "/results" },
+  { key: "plots", label: "Визуализация", path: "/plots" },
 ];
 
 const Stepper = () => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   const dataRows = useSelector((s) => s.data.rows);
   const analysisStatus = useSelector((s) => s.analysis.status);
   const resultsTotal = useSelector((s) => s.results.total);
   const plotsImages = useSelector((s) => s.plots.images);
 
+  const analysisDone = analysisStatus === "done";
+  const onPlots = currentPath === "/plots";
+  const plotsLoaded = Object.keys(plotsImages || {}).length > 0;
+  const visitedPlots = onPlots || plotsLoaded;
+
   const completed = {
     data: dataRows > 0,
-    analysis: analysisStatus === "done",
-    results: resultsTotal > 0,
-    plots: Object.keys(plotsImages || {}).length > 0,
+    analysis: analysisDone,
+    results: analysisDone && (resultsTotal > 0 || visitedPlots),
+    plots: analysisDone && visitedPlots,
   };
-
-  const order = STEPS.map((s) => s.key);
-  let currentIdx = order.findIndex((k) => !completed[k]);
-  if (currentIdx === -1) currentIdx = order.length;
 
   return (
     <div
@@ -32,11 +37,13 @@ const Stepper = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "14px 24px",
+        borderBottom: "1px solid #eee",
+        background: "#fff",
       }}
     >
       {STEPS.map((step, i) => {
         const done = completed[step.key];
-        const active = i === currentIdx;
+        const active = currentPath === step.path;
 
         return (
           <React.Fragment key={step.key}>

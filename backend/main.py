@@ -222,6 +222,7 @@ def run_analysis(task_id: str, session_id: str, params: AnalyzeRequest):
 
         update_task(task_id, progress=60, message="Экспертная оценка ущерба...")
         expert = ExpertDamageEstimator()
+        rng = np.random.default_rng()
 
         if params.damage_mode == "linguistic" and params.ling_values:
             ling_to_num = {
@@ -239,7 +240,7 @@ def run_analysis(task_id: str, session_id: str, params: AnalyzeRequest):
 
             for i in range(len(X_test)):
                 noisy = {
-                    cat: max(0, min(100, num_vals[cat] + int(np.random.randint(-10, 10))))
+                    cat: max(0, min(100, num_vals[cat] + int(rng.integers(-10, 10))))
                     for cat in num_vals
                 }
                 expert.set_damage_for_event(i, noisy)
@@ -253,11 +254,11 @@ def run_analysis(task_id: str, session_id: str, params: AnalyzeRequest):
 
             for i in range(len(X_test)):
                 scores = {
-                    "financial": np.random.uniform(20, 90),
-                    "reputational": np.random.uniform(10, 80),
-                    "operational": np.random.uniform(5, 70),
-                    "legal": np.random.uniform(0, 60),
-                    "data_loss": np.random.uniform(10, 95),
+                    "financial": rng.uniform(20, 90),
+                    "reputational": rng.uniform(10, 80),
+                    "operational": rng.uniform(5, 70),
+                    "legal": rng.uniform(0, 60),
+                    "data_loss": rng.uniform(10, 95),
                 }
                 expert.set_damage_for_event(i, scores)
 
@@ -265,27 +266,43 @@ def run_analysis(task_id: str, session_id: str, params: AnalyzeRequest):
 
         update_task(task_id, progress=75, message="Совокупный риск...")
         risks, categories = compute_aggregate_risk(y_prob, damages)
-        if sess.get("scenario") == "balanced":
-            rmin, rmax = risks.min(), risks.max()
-            if rmax > rmin:
-                risks = 5.0 + (risks - rmin) / (rmax - rmin) * 70.0
-            else:
-                risks = np.full_like(risks, 40.0)
-            categories = []
-            for r in risks:
-                if r < 20: categories.append("Низкий")
-                elif r < 40: categories.append("Средний")
-                elif r < 60: categories.append("Высокий")
-                else: categories.append("Критический")
+
+        if sess.get("scenario") == "balanced" and len(risks) >= 4:
+            rng = np.random.default_rng()
+
+            q1 = 0.50 + rng.uniform(-0.05, 0.05) 
+            q2 = 0.78 + rng.uniform(-0.04, 0.04) 
+            q3 = 0.95 + rng.uniform(-0.03, 0.03) 
+            if q1 >= q2:
+                q2 = min(q1 + 0.05, 0.95)
+            if q2 >= q3:
+                q3 = min(q2 + 0.03, 0.99)
+
+            q1v, q2v, q3v = np.quantile(risks, [q1, q2, q3])
+            categories = [
+                "Низкий" if r <= q1v else
+                "Средний" if r <= q2v else
+                "Высокий" if r <= q3v else
+                "Критический"
+                for r in risks
+            ]
 
         update_task(task_id, progress=85, message="Формирование отчёта...")
         ids = list(range(len(X_test)))
         descriptions = [f"Событие №{i+1}" for i in ids]
         report = prepare_report(risks, ids, descriptions,
                                 df=df.iloc[X_test.index] if df is not None else None)
-        report_df = pd.DataFrame(report)
-        report_df.columns = ["ID", "Значение риска", "Уровень риска",
-                             "Стратегия", "Детали", "Описание уязвимости", "Описание"]
+
+        report_df = pd.DataFrame({
+            "Событие": [f"Событие №{i + 1}" for i in range(len(X_test))],
+            "Характеристика": [r["vulnerability_description"] for r in report],
+            "Возможность реализации рискового события": np.round(y_prob, 3),
+            "Ущерб": np.round(damages, 1),
+            "Оценка (произведение возможности на ущерб)": np.round(risks, 2),
+            "Уровень риска (критичность)": categories,
+            "Стратегия": [r["strategy"] for r in report],
+            "Детали": [r["detail"] for r in report],
+        })
 
         from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
         acc = accuracy_score(y_test, y_pred)
@@ -421,9 +438,21 @@ def report_html(session_id: str):
     sess = get_session(session_id)
     if sess is None or sess["report_df"] is None:
         raise HTTPException(404, "нет отчёта")
-    html = f"""<html><head><meta charset="UTF-8"><title>Отчёт</title></head>
-    <body><h1>Отчёт по рискам ИБ</h1>
-    {sess['report_df'].to_html(index=False)}</body></html>"""
+
+    table_html = sess["report_df"].to_html(index=False, justify="left")
+
+    html = f"""<html><head><meta charset="UTF-8"><title>Отчёт по рискам</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
+        th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }}
+        th {{ background: #f2f2f2; }}
+    </style></head>
+    <body>
+    <h1>Отчёт по рискам информационной безопасности</h1>
+    {table_html}
+    </body></html>"""
+
     path = REPORTS / f"{session_id}.html"
     path.write_text(html, encoding="utf-8")
     return FileResponse(path, filename="report.html", media_type="text/html")
@@ -438,17 +467,19 @@ def report_pdf(session_id: str):
     except Exception as e:
         raise HTTPException(500, f"WeasyPrint недоступен: {e}")
 
+    table_html = sess["report_df"].to_html(index=False, justify="left")
+
     html = f"""<html><head><meta charset="UTF-8"><title>Отчёт</title>
     <style>
         @page {{ size: landscape; margin: 1cm; }}
         body {{ font-family: Arial, sans-serif; }}
-        table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
-        th, td {{ border: 1px solid #ccc; padding: 4px 6px; }}
+        table {{ border-collapse: collapse; width: 100%; font-size: 10px; }}
+        th, td {{ border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }}
         th {{ background: #f2f2f2; }}
     </style></head>
     <body>
     <h1>Отчёт по рискам информационной безопасности</h1>
-    {sess['report_df'].to_html(index=False)}
+    {table_html}
     </body></html>"""
 
     path = REPORTS / f"{session_id}.pdf"
@@ -536,17 +567,21 @@ def dataset_html(session_id: str):
     sess = get_session(session_id)
     if sess is None or sess["df"] is None:
         raise HTTPException(404, "данные не загружены")
+
+    table_html = sess["df"].to_html(index=False, justify="left")
+
     html = f"""<html><head><meta charset="UTF-8"><title>Датасет</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 20px; }}
         table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
-        th, td {{ border: 1px solid #ccc; padding: 4px 6px; text-align: center; }}
+        th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }}
         th {{ background: #f2f2f2; }}
     </style></head>
     <body>
     <h1>Датасет для анализа рисков</h1>
-    {sess['df'].to_html(index=False)}
+    {table_html}
     </body></html>"""
+
     path = REPORTS / f"dataset_{session_id}.html"
     path.write_text(html, encoding="utf-8")
     return FileResponse(path, filename="dataset.html", media_type="text/html")

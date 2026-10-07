@@ -65,14 +65,22 @@ const ResultsPage = () => {
 
   const renderCell = (col, val) => {
     if (val === null || val === undefined) return "—";
-    if (col === "ID") return String(Math.trunc(Number(val)));
-    if (col === "Уровень риска") {
+
+    if (col === "Уровень риска (критичность)") {
       const cls = LEVEL_CLASSES[val];
       if (cls) {
         return <span className={`${styles.level} ${styles[cls]}`}>{val}</span>;
       }
     }
-    if (typeof val === "number") return Number(val).toFixed(3);
+    if (col === "Возможность реализации рискового события") {
+      return Number(val).toFixed(3);
+    }
+    if (col === "Ущерб") {
+      return Number(val).toFixed(1);
+    }
+    if (col === "Оценка (произведение возможности на ущерб)") {
+      return Number(val).toFixed(2);
+    }
     return String(val);
   };
 
@@ -105,13 +113,14 @@ const ResultsPage = () => {
     rows.length > 0
       ? Object.keys(rows[0])
       : [
-          "ID",
-          "Значение риска",
-          "Уровень риска",
+          "Событие",
+          "Характеристика",
+          "Возможность реализации рискового события",
+          "Ущерб",
+          "Оценка (произведение возможности на ущерб)",
+          "Уровень риска (критичность)",
           "Стратегия",
           "Детали",
-          "Описание уязвимости",
-          "Описание",
         ];
 
   return (
@@ -123,25 +132,29 @@ const ResultsPage = () => {
           <h2 className={styles.panelTitle}>Метрики модели</h2>
           <div className={styles.metricsGrid}>
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>Accuracy</div>
+              <div className={styles.metricLabel}>Accuracy (Точность)</div>
               <div className={styles.metricValue}>
                 {summary.acc?.toFixed(3)}
               </div>
             </div>
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>F1-score</div>
+              <div className={styles.metricLabel}>F1-score (баланс точности и полноты)</div>
               <div className={styles.metricValue}>
                 {summary.f1?.toFixed(3)}
               </div>
             </div>
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>AUC-ROC</div>
+              <div className={styles.metricLabel}>
+                AUC-ROC (площадь под ROC-кривой)
+              </div>
               <div className={styles.metricValue}>
                 {summary.auc?.toFixed(3)}
               </div>
             </div>
             <div className={styles.metricCard}>
-              <div className={styles.metricLabel}>Всего риск-событий</div>
+              <div className={styles.metricLabel}>
+                Всего риск-событий
+              </div>
               <div className={styles.metricValue}>{summary.total_risks}</div>
             </div>
           </div>

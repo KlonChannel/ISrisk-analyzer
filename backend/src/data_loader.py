@@ -13,7 +13,7 @@ def generate_or_load_data(source='generate', file_path=None, scenario='balanced'
     Генерация или загрузка данных
     """
     if source == 'generate':
-        np.random.seed(42)
+        np.random.seed(None)
         departments = ['IT_Ops', 'DevOps', 'Finance', 'HR', 'Development', 'Security']
         event_types = ['Auth_Attempt', 'File_Access', 'Network_Connection', 'DB_Query', 'Config_Change', 'VPN_Connect']
 
