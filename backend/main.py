@@ -149,6 +149,56 @@ def _to_py(v):
         return v.isoformat()
     return v
 
+RU_WEIGHT_NAMES = {
+    "financial": "Финансовый",
+    "reputational": "Репутационный",
+    "operational": "Операционный",
+    "legal": "Юридический",
+    "data_loss": "Потеря данных",
+}
+
+
+def _build_report_html(sess: dict, for_pdf: bool = False) -> str:
+    acc = float(sess.get("acc") or 0.0)
+    f1  = float(sess.get("f1")  or 0.0)
+    auc = float(sess.get("auc") or 0.0)
+
+    weights = sess.get("damage_weights") or {}
+    weights_df = pd.DataFrame([
+        {"Категория": RU_WEIGHT_NAMES.get(k, k), "Вес": round(float(v), 4)}
+        for k, v in weights.items()
+    ])
+
+    table_html = sess["report_df"].to_html(index=False, justify="left")
+
+    page_css = "@page { size: landscape; margin: 1cm; }" if for_pdf else ""
+    font_size = "10px" if for_pdf else "12px"
+
+    return f"""<html><head><meta charset="UTF-8"><title>Отчёт по рискам</title>
+    <style>
+        {page_css}
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        table {{ border-collapse: collapse; width: 100%; font-size: {font_size}; }}
+        th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }}
+        th {{ background: #f2f2f2; }}
+    </style></head>
+    <body>
+    <h1>Отчёт по рискам информационной безопасности</h1>
+
+    <h3>Метрики модели</h3>
+    <ul>
+        <li><b>Accuracy (Точность)</b> – доля правильных ответов: {acc:.3f}</li>
+        <li><b>F1-score (F1-мера, баланс точности и полноты)</b>: {f1:.3f}</li>
+        <li><b>AUC-ROC (площадь под ROC-кривой)</b>: {auc:.3f}</li>
+    </ul>
+
+    <h3>Экспертные веса ущерба</h3>
+    {weights_df.to_html(index=False, justify="left")}
+
+    <h3>Рекомендации (все записи)</h3>
+    {table_html}
+    </body></html>"""
+
 # Предпросмотр
 @app.get("/api/data/preview")
 def data_preview(session_id: str, page: int = 1):
@@ -439,23 +489,11 @@ def report_html(session_id: str):
     if sess is None or sess["report_df"] is None:
         raise HTTPException(404, "нет отчёта")
 
-    table_html = sess["report_df"].to_html(index=False, justify="left")
-
-    html = f"""<html><head><meta charset="UTF-8"><title>Отчёт по рискам</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        table {{ border-collapse: collapse; width: 100%; font-size: 12px; }}
-        th, td {{ border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }}
-        th {{ background: #f2f2f2; }}
-    </style></head>
-    <body>
-    <h1>Отчёт по рискам информационной безопасности</h1>
-    {table_html}
-    </body></html>"""
-
+    html = _build_report_html(sess, for_pdf=False)
     path = REPORTS / f"{session_id}.html"
     path.write_text(html, encoding="utf-8")
     return FileResponse(path, filename="report.html", media_type="text/html")
+
 
 @app.get("/api/report/pdf")
 def report_pdf(session_id: str):
@@ -467,21 +505,7 @@ def report_pdf(session_id: str):
     except Exception as e:
         raise HTTPException(500, f"WeasyPrint недоступен: {e}")
 
-    table_html = sess["report_df"].to_html(index=False, justify="left")
-
-    html = f"""<html><head><meta charset="UTF-8"><title>Отчёт</title>
-    <style>
-        @page {{ size: landscape; margin: 1cm; }}
-        body {{ font-family: Arial, sans-serif; }}
-        table {{ border-collapse: collapse; width: 100%; font-size: 10px; }}
-        th, td {{ border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }}
-        th {{ background: #f2f2f2; }}
-    </style></head>
-    <body>
-    <h1>Отчёт по рискам информационной безопасности</h1>
-    {table_html}
-    </body></html>"""
-
+    html = _build_report_html(sess, for_pdf=True)
     path = REPORTS / f"{session_id}.pdf"
     WPHTML(string=html).write_pdf(path)
     return FileResponse(path, filename="report.pdf", media_type="application/pdf")
