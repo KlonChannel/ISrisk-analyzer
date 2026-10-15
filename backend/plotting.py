@@ -85,7 +85,7 @@ def plot_1_heatmap(sess, department, event_type, level):
             fontsize=13,
         )
     ax.set_xlabel("Возможность реализации рискового события", fontsize=11)
-    ax.set_ylabel("Оценка риска (возможность × ущерб)", fontsize=11)
+    ax.set_ylabel("Оценка риска (возможность × ущерб), у.е.", fontsize=11)
     return _fig_to_base64(fig)
 
 
@@ -100,7 +100,7 @@ def plot_2_top(sess, department, event_type, level):
     )
     ax.set_yticks(range(len(top)))
     ax.set_yticklabels([f"Событие {i}" for i in top.index])
-    ax.set_xlabel("Оценка риска (возможность × ущерб)", fontsize=11)
+    ax.set_xlabel("Оценка риска (возможность × ущерб), у.е.", fontsize=11)
     ax.set_title("Топ-20 риск-событий по оценке риска", fontsize=14)
     legend = [Patch(facecolor=COLORS[l], label=l) for l in COLORS if l in top["risk_level"].unique()]
     ax.legend(handles=legend, title="Уровень риска (критичность)")
@@ -121,7 +121,7 @@ def plot_3_distribution(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 5. Прогноз: возможность × ущерб 
+# 4. Прогноз: возможность × ущерб 
 def plot_5_bubble(sess, department, event_type, level):
     filtered = _filter_df(sess, department, event_type, level)
     fig, ax = plt.subplots(figsize=(9, 6))
@@ -132,14 +132,14 @@ def plot_5_bubble(sess, department, event_type, level):
         edgecolors="black", linewidth=0.5,
     )
     ax.set_xlabel("Прогнозируемая возможность реализации рискового события", fontsize=11)
-    ax.set_ylabel("Ущерб", fontsize=11)
+    ax.set_ylabel("Ущерб, у.е.", fontsize=11)
     ax.set_title("Прогноз риска: возможность реализации × ущерб", fontsize=13)
     cbar = plt.colorbar(scatter, ax=ax)
-    cbar.set_label("Оценка риска (возможность × ущерб)", fontsize=10)
+    cbar.set_label("Оценка риска (возможность × ущерб), у.е.", fontsize=10)
     return _fig_to_base64(fig)
 
 
-# 6. Сводка по отделам 
+# 5. Сводка по отделам 
 def plot_6_dept_summary(sess, department, event_type, level):
     filtered = _filter_df(sess, department, event_type, level)
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
@@ -152,7 +152,7 @@ def plot_6_dept_summary(sess, department, event_type, level):
 
     axes[0].bar(stats["department_ru"], stats["avg_risk"], color="#2B7AEC")
     axes[0].set_title("Средняя оценка риска", fontsize=12)
-    axes[0].set_ylabel("Оценка риска", fontsize=10)
+    axes[0].set_ylabel("Оценка риска, у.е.", fontsize=10)
     axes[0].tick_params(axis="x", rotation=45)
 
     axes[1].bar(stats["department_ru"], stats["count"], color="#17A2B8")
@@ -160,16 +160,16 @@ def plot_6_dept_summary(sess, department, event_type, level):
     axes[1].set_ylabel("Количество", fontsize=10)
     axes[1].tick_params(axis="x", rotation=45)
 
-    axes[2].bar(stats["department_ru"], stats["critical_ratio"], color="#DC3545")
+    axes[2].bar(stats["department_ru"], stats["critical_ratio"]*100, color="#DC3545")
     axes[2].set_title("Доля критических рисков", fontsize=12)
-    axes[2].set_ylabel("Доля", fontsize=10)
+    axes[2].set_ylabel("Доля, %", fontsize=10)
     axes[2].tick_params(axis="x", rotation=45)
 
     plt.tight_layout()
     return _fig_to_base64(fig)
 
 
-# 7. Корреляция 
+# 6. Корреляция 
 def plot_7_correlation(sess, department, event_type, level):
     filtered = _filter_df(sess, department, event_type, level)
     df_full = sess["df"]
@@ -182,7 +182,7 @@ def plot_7_correlation(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 8. Временной профиль 
+# 7. Временной профиль 
 def plot_8_temporal(sess, department, event_type, level):
     filtered = _filter_df(sess, department, event_type, level).copy()
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -200,7 +200,7 @@ def plot_8_temporal(sess, department, event_type, level):
     ax2 = ax.twinx()
     ax2.plot(hourly["hour"], hourly["avg_risk"], marker="s",
              label="Средняя оценка риска", color="#DC3545", linestyle="--")
-    ax2.set_ylabel("Средняя оценка риска", fontsize=11, color="#DC3545")
+    ax2.set_ylabel("Средняя оценка риска, у.е.", fontsize=11, color="#DC3545")
     ax2.tick_params(axis="y", labelcolor="#DC3545")
     ax.set_title("Временной профиль риск-событий по часам суток", fontsize=13)
     lines1, labels1 = ax.get_legend_handles_labels()
@@ -209,7 +209,7 @@ def plot_8_temporal(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 9. Стратегии 
+# 8. Стратегии 
 def plot_9_strategies(sess, department, event_type, level):
     filtered = _filter_df(sess, department, event_type, level).copy()
     strategy_map = {
@@ -227,7 +227,7 @@ def plot_9_strategies(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 10. Матрица ошибок
+# 9. Матрица ошибок
 def plot_10_confusion(sess, department, event_type, level):
     y_test = sess["y_test"]
     y_pred = sess["y_pred"]
@@ -244,7 +244,7 @@ def plot_10_confusion(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 11. ROC
+# 10. ROC
 def plot_11_roc(sess, department, event_type, level):
     y_test = sess["y_test"]
     y_prob = sess["y_prob"]
@@ -260,7 +260,7 @@ def plot_11_roc(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 12. Калибровка
+# 11. Калибровка
 def plot_12_calibration(sess, department, event_type, level):
     y_test = sess["y_test"]
     y_prob = sess["y_prob"]
@@ -276,7 +276,7 @@ def plot_12_calibration(sess, department, event_type, level):
     return _fig_to_base64(fig)
 
 
-# 13. Суррогатное дерево
+# 12. Суррогатное дерево
 def plot_13_surrogate_tree(sess, department, event_type, level):
     from sklearn.tree import DecisionTreeClassifier, plot_tree
 
