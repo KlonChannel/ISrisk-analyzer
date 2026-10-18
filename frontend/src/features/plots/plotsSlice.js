@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../api/client";
 import { createSession } from "../session/sessionSlice";
+import { startAnalysis  } from "../analysis/analysisSlice";
 import { toErrorMessage } from "../../utils/errorMessage";
 
 export const fetchPlotFilters = createAsyncThunk(
@@ -100,6 +101,18 @@ const plotsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(createSession.fulfilled, () => makeInitialState())
+
+      .addCase(startAnalysis.fulfilled, (state) => {
+        state.current = {
+          department: "Все",
+          eventType: "Все",
+          level: "Все",
+        };
+        // Очищаем загруженные графики и ошибки
+        state.images = {};
+        state.errors = {};
+        state.loading = {};
+      })
 
       .addCase(fetchPlotFilters.fulfilled, (state, action) => {
         if (state.sessionId && state.sessionId !== action.payload.sessionId)
