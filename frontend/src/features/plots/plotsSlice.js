@@ -85,7 +85,17 @@ const plotsSlice = createSlice({
       const { name, value } = action.payload;
       state.current[name] = value;
     },
-    resetPlots: () => makeInitialState(),
+    resetPlots: (state) => {
+      state.current = {
+        department: "Все",
+        eventType: "Все",
+        level: "Все",
+      };
+      // Очищаем загруженные графики и ошибки
+      state.images = {};
+      state.errors = {};
+      state.loading = {};
+    },
   },
   extraReducers: (builder) => {
     builder

@@ -48,6 +48,8 @@ const PlotsPage = () => {
     (s) => s.plots
   );
 
+  const isAnyPlotLoading = Object.values(loading).some((status) => status === true);
+
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [zipError, setZipError] = useState(null);
 
@@ -131,6 +133,7 @@ const PlotsPage = () => {
               className={styles.select}
               value={current.department}
               onChange={(e) => handleFilter("department", e.target.value)}
+              disabled={isAnyPlotLoading}
             >
               {filters.departments.map((d) => (
                 <option key={d} value={d}>
@@ -146,6 +149,7 @@ const PlotsPage = () => {
               className={styles.select}
               value={current.eventType}
               onChange={(e) => handleFilter("eventType", e.target.value)}
+              disabled={isAnyPlotLoading}
             >
               {filters.events.map((e) => (
                 <option key={e} value={e}>
@@ -161,6 +165,7 @@ const PlotsPage = () => {
               className={styles.select}
               value={current.level}
               onChange={(e) => handleFilter("level", e.target.value)}
+              disabled={isAnyPlotLoading}
             >
               {filters.levels.map((l) => (
                 <option key={l} value={l}>
@@ -170,7 +175,7 @@ const PlotsPage = () => {
             </select>
           </div>
 
-          <button className={styles.btnGhost} onClick={handleReset}>
+          <button className={styles.btnGhost} onClick={handleReset} disabled={isAnyPlotLoading}>
             Сбросить фильтры
           </button>
         </div>
@@ -184,7 +189,7 @@ const PlotsPage = () => {
           <button
             className={styles.btnSecondary}
             onClick={handleDownloadZip}
-            disabled={downloadingZip}
+            disabled={downloadingZip || isAnyPlotLoading}
           >
             {downloadingZip ? "Формирование..." : "Скачать все графики (ZIP)"}
           </button>
